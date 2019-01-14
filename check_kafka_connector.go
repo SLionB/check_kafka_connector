@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 )
 
 type kafkaTask struct {
@@ -74,7 +75,10 @@ func main() {
 		kafkaConnectStatusURL = "https://httpbin.org/ip"
 	}
 	fmt.Printf("Checking Kafka Connector...%s\n", kafkaConnectStatusURL)
-	response, err := http.Get(kafkaConnectStatusURL)
+	var netClient = &http.Client{
+		Timeout: time.Second * 10,
+	}
+	response, err := netClient.Get(kafkaConnectStatusURL)
 
 	//Get JSON response
 	if err != nil {
@@ -104,7 +108,10 @@ func main() {
 				fmt.Printf("Restarting Kafka Task...%s\n", kafkaConnectRestartTaskURL)
 				jsonData := ""
 				jsonValue, _ := json.Marshal(jsonData)
-				response, err := http.Post(kafkaConnectRestartTaskURL, "application/json", bytes.NewBuffer(jsonValue))
+				var netClient = &http.Client{
+					Timeout: time.Second * 10,
+				}
+				response, err := netClient.Post(kafkaConnectRestartTaskURL, "application/json", bytes.NewBuffer(jsonValue))
 				if err != nil {
 					fmt.Printf("The HTTP request failed with error %s\n", err)
 				} else {
