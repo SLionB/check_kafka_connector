@@ -1,48 +1,32 @@
 package main
 
 import (
-    "bytes"
-    "encoding/json"
-    "fmt"
-    "io/ioutil"
-    "net/http"
-	"os/exec"
-	"time"
+	"bytes"
+	"encoding/json"
+	"flag"
+	"fmt"
+	"io/ioutil"
+	"net/http"
 )
 
-type KafkaTask struct {
-  State string
-  Trace string
-  Id int
-  Worker_id string
+type kafkaTask struct {
+	State     string
+	Trace     string
+	ID        int
+	Worker_id string
 }
-type KafkaConnector struct {
-  State string
-  Worker_id string
+type kafkaConnector struct {
+	State     string
+	Worker_id string
 }
-type KafkaConnectStatus struct {
-  Name string
-  Connector KafkaConnector
-  Tasks []KafkaTask
-  Type string
-}
-
-type Bird struct {
-  Species string
-  Description string
+type kafkaConnectStatus struct {
+	Name      string
+	Connector kafkaConnector
+	Tasks     []kafkaTask
+	Type      string
 }
 
-var KafkaConnectServerName = "localhost"
-var KafkaConnectServerPort = "8083"
-var KafkaConnectorName = "cbs-dev-app-os2200"
-var KafkaConnectorServiceName = "os2200"
-
-var restartWorkerServer = true
-var pauseandresumeConnector = false
-var restartConnectorTask = false
-var testme = false
-
-var KafkaConnectTestReply = `{
+var kafkaConnectCheckTestReply = `{
   "name": "cbs-dev-app-os2200",
   "connector": {
     "state": "RUNNING",
@@ -67,116 +51,69 @@ var KafkaConnectTestReply = `{
 
 func main() {
 
-	shouldPauseConnector := false
-	shouldRestartWorker := false
-		
-    kafkaConnectApiURL :=  fmt.Sprintf("http://%s:%s/connectors/%s/status", KafkaConnectServerName ,KafkaConnectServerPort, KafkaConnectorName)
-	fmt.Printf("Checking Kafka Connector...%s\n", kafkaConnectApiURL)
-	
-	var response *http.Response
-    var err error
-	if (testme == true ){
-		response, err = http.Get("https://httpbin.org/ip")
+	fmt.Println("Starting the application...")
+	fmt.Println("Usage: go run check_kafka_connector.go -s=localhost:8083 -c=cbs-dev-app-os2200 -t=false")
+	fmt.Println("-s = Kafka Connect Server IP:Port(localhost:8083)")
+	fmt.Println("-c = Kafka Connector Name(cbs-dev-app-os2200)")
+	fmt.Println("-t = Kafka Connector Check Test for debbuging ONLY(false)")
+	//Get commandline flags
+	var kafkaConnectServer string
+	var kafkaConnectorName string
+	var kafkaConnectorCheckTest bool
+	flag.StringVar(&kafkaConnectServer, "s", "localhost:8083", "kafkaConnectServer")
+	flag.StringVar(&kafkaConnectorName, "c", "cbs-dev-app-os2200", "kafkaConnectorName")
+	flag.BoolVar(&kafkaConnectorCheckTest, "t", false, "kafkaConnectorCheckTest")
+	flag.Parse()
+	fmt.Println("kafkaConnectServer has value ", kafkaConnectServer)
+	fmt.Println("kafkaConnectorName has value ", kafkaConnectorName)
+	fmt.Println("kafkaConnectorCheckTest has value ", kafkaConnectorCheckTest)
+
+	//Check Connector Status with a GET request
+	kafkaConnectStatusURL := fmt.Sprintf("http://%s/connectors/%s/status", kafkaConnectServer, kafkaConnectorName)
+	if kafkaConnectorCheckTest == true {
+		kafkaConnectStatusURL = "https://httpbin.org/ip"
+	}
+	fmt.Printf("Checking Kafka Connector...%s\n", kafkaConnectStatusURL)
+	response, err := http.Get(kafkaConnectStatusURL)
+
+	//Get JSON response
+	if err != nil {
+		fmt.Printf("The HTTP request failed with error %s\n", err)
 	} else {
-		response, err = http.Get(kafkaConnectApiURL)
-	}
-	
-		
-    if err != nil {
-        fmt.Printf("The HTTP request failed with error %s\n", err)
-    } else {
-		//data := KafkaConnectTestReply
-		data, _  := ioutil.ReadAll(response.Body)
- 		fmt.Println(string(data)) 
-		
-		var status KafkaConnectStatus	
-        json.Unmarshal([]byte(data), &status)
+		data, _ := ioutil.ReadAll(response.Body)
+		if kafkaConnectorCheckTest == true {
+			data = []byte(kafkaConnectCheckTestReply)
+		}
+		fmt.Println(string(data))
+
+		//Unmarshal JSON response to data structure
+		var status kafkaConnectStatus
+		json.Unmarshal([]byte(data), &status)
+
+		//Check for failed tasks
 		for i := range status.Tasks {
-			//fmt.Printf("Id:%d, State: %s, WorkerID: %s\n",status.Tasks[i].Id,status.Tasks[i].State,status.Tasks[i].Worker_id)
-			
-			if (status.Tasks[i].State == "FAILED"){
-			    shouldPauseConnector = true
-				fmt.Printf("Id:%d, State: %s, WorkerID: %s\n",status.Tasks[i].Id,status.Tasks[i].State,status.Tasks[i].Worker_id)
-				
-				// Restarts the Tasks that FAILED
-				if (restartConnectorTask == true){
-					//http://localhost:8083/connectors/cbs-dev-app-os2200/tasks/0/restart
-					kafkaConnectRestartTaskURL :=  fmt.Sprintf("http://%s:%s/connectors/%s/tasks/%d/restart", KafkaConnectServerName ,KafkaConnectServerPort, KafkaConnectorName, status.Tasks[i].Id)
-					fmt.Printf("Restarting Kafka Task...%s\n", kafkaConnectRestartTaskURL)
-				
-					jsonData := ""
-					jsonValue, _ := json.Marshal(jsonData)
-					response, err = http.Post(kafkaConnectRestartTaskURL, "application/json", bytes.NewBuffer(jsonValue))
-					if err != nil {
-						fmt.Printf("The HTTP request failed with error %s\n", err)
-					} else {
-						data, _ := ioutil.ReadAll(response.Body)
-						fmt.Println(string(data))
-					}
+			if status.Tasks[i].State == "FAILED" {
+				fmt.Printf("Id:%d, State: %s, WorkerID: %s\n", status.Tasks[i].ID, status.Tasks[i].State, status.Tasks[i].Worker_id)
+
+				// Restart failed tasks
+				kafkaConnectRestartTaskURL := fmt.Sprintf("http://%s/connectors/%s/tasks/%d/restart", kafkaConnectServer, kafkaConnectorName, status.Tasks[i].ID)
+				if kafkaConnectorCheckTest == true {
+					kafkaConnectRestartTaskURL = "https://httpbin.org/post"
+					//kafkaConnectRestartTaskURL = fmt.Sprintf("%s", "http://localhost:9200/kibana_sample_data_logs/_close")
 				}
-				
-				if (status.Connector.Worker_id == status.Tasks[i].Worker_id ) {
-					shouldRestartWorker = true
+				fmt.Printf("Restarting Kafka Task...%s\n", kafkaConnectRestartTaskURL)
+				jsonData := ""
+				jsonValue, _ := json.Marshal(jsonData)
+				response, err := http.Post(kafkaConnectRestartTaskURL, "application/json", bytes.NewBuffer(jsonValue))
+				if err != nil {
+					fmt.Printf("The HTTP request failed with error %s\n", err)
+				} else {
+					data, _ := ioutil.ReadAll(response.Body)
+					fmt.Println(string(data))
 				}
-			}
-		}
-    }
-	
-	// Pauses and Resumes the connector
-	if (shouldPauseConnector == true && pauseandresumeConnector == true) {
-	
-       //http://localhost:8083/connectors/cbs-dev-app-os2200/pause
-		kafkaConnectPauseURL :=  fmt.Sprintf("http://%s:%s/connectors/%s/pause", KafkaConnectServerName ,KafkaConnectServerPort, KafkaConnectorName)
-		fmt.Printf("Pausing Kafka Connect...%s\n", kafkaConnectPauseURL)
-		
-		jsonData := ""
-		jsonValue, _ := json.Marshal(jsonData)
-		client := http.Client{}
-		client.Timeout = time.Second * 15
-		req, err := http.NewRequest(http.MethodPut, kafkaConnectPauseURL, bytes.NewBuffer(jsonValue))
-		if err != nil {
-			panic(err)
-		}
-		req.Header.Set("Content-Type", "application/json; charset=utf-8")
-		response, err = client.Do(req)
-		if err != nil {
-			fmt.Printf("The HTTP request failed with error %s\n", err)
-		} else {
-			data, _ := ioutil.ReadAll(response.Body)
-			fmt.Println(string(data))
-		}
-		
-		time.Sleep(time.Second * 20)
-		
-		//http://localhost:8083/connectors/cbs-dev-app-os2200/resume
-		kafkaConnectResumeURL :=  fmt.Sprintf("http://%s:%s/connectors/%s/resume", KafkaConnectServerName ,KafkaConnectServerPort, KafkaConnectorName)
-		fmt.Printf("Resuming Kafka Connect...%s\n", kafkaConnectResumeURL)
-		
-		req, err = http.NewRequest(http.MethodPut, kafkaConnectResumeURL, bytes.NewBuffer(jsonValue))
-		if err != nil {
-			panic(err)
-		}
-		req.Header.Set("Content-Type", "application/json; charset=utf-8")
-		response, err = client.Do(req)
-		if err != nil {
-			fmt.Printf("The HTTP request failed with error %s\n", err)
-		} else {
-			data, _ := ioutil.ReadAll(response.Body)
-			fmt.Println(string(data))
-		}
-	
-	}
-	
-	//Restarts the local worker
-	if (shouldRestartWorker == true && restartWorkerServer == true) {
-		fmt.Printf("Restarting Kafka Connect Service...%s\n", KafkaConnectorServiceName)
-		output, err := exec.Command("systemctl", "restart", KafkaConnectorServiceName+".service").Output()
-		if err != nil {
-			panic(err)
-		}
-		fmt.Println(string(output))
-	}
-	
-	
-    fmt.Println("Terminating the application...")
+			} // if status.Tasks[i].State == "FAILED"
+		} // for i := range status.Tasks
+	} // else
+
+	fmt.Println("Terminating the application...")
 }
