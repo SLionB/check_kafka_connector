@@ -27,11 +27,6 @@ type KafkaConnectStatus struct {
   Type string
 }
 
-type Bird struct {
-  Species string
-  Description string
-}
-
 var KafkaConnectServerName = "localhost"
 var KafkaConnectServerPort = "8083"
 var KafkaConnectorName = "cbs-dev-app-os2200"
@@ -70,11 +65,11 @@ func main() {
 	shouldPauseConnector := false
 	shouldRestartWorker := false
 		
-    kafkaConnectApiURL :=  fmt.Sprintf("http://%s:%s/connectors/%s/status", KafkaConnectServerName ,KafkaConnectServerPort, KafkaConnectorName)
+        kafkaConnectApiURL :=  fmt.Sprintf("http://%s:%s/connectors/%s/status", KafkaConnectServerName ,KafkaConnectServerPort, KafkaConnectorName)
 	fmt.Printf("Checking Kafka Connector...%s\n", kafkaConnectApiURL)
 	
 	var response *http.Response
-    var err error
+        var err error
 	if (testme == true ){
 		response, err = http.Get("https://httpbin.org/ip")
 	} else {
@@ -82,15 +77,15 @@ func main() {
 	}
 	
 		
-    if err != nil {
-        fmt.Printf("The HTTP request failed with error %s\n", err)
-    } else {
+       if err != nil {
+          fmt.Printf("The HTTP request failed with error %s\n", err)
+       } else {
 		//data := KafkaConnectTestReply
 		data, _  := ioutil.ReadAll(response.Body)
  		fmt.Println(string(data)) 
 		
 		var status KafkaConnectStatus	
-        json.Unmarshal([]byte(data), &status)
+                json.Unmarshal([]byte(data), &status)
 		for i := range status.Tasks {
 			//fmt.Printf("Id:%d, State: %s, WorkerID: %s\n",status.Tasks[i].Id,status.Tasks[i].State,status.Tasks[i].Worker_id)
 			
@@ -125,10 +120,10 @@ func main() {
 	// Pauses and Resumes the connector
 	if (shouldPauseConnector == true && pauseandresumeConnector == true) {
 	
-       //http://localhost:8083/connectors/cbs-dev-app-os2200/pause
+	       //http://localhost:8083/connectors/cbs-dev-app-os2200/pause
 		kafkaConnectPauseURL :=  fmt.Sprintf("http://%s:%s/connectors/%s/pause", KafkaConnectServerName ,KafkaConnectServerPort, KafkaConnectorName)
 		fmt.Printf("Pausing Kafka Connect...%s\n", kafkaConnectPauseURL)
-		
+
 		jsonData := ""
 		jsonValue, _ := json.Marshal(jsonData)
 		client := http.Client{}
@@ -145,13 +140,13 @@ func main() {
 			data, _ := ioutil.ReadAll(response.Body)
 			fmt.Println(string(data))
 		}
-		
+
 		time.Sleep(time.Second * 20)
-		
+
 		//http://localhost:8083/connectors/cbs-dev-app-os2200/resume
 		kafkaConnectResumeURL :=  fmt.Sprintf("http://%s:%s/connectors/%s/resume", KafkaConnectServerName ,KafkaConnectServerPort, KafkaConnectorName)
 		fmt.Printf("Resuming Kafka Connect...%s\n", kafkaConnectResumeURL)
-		
+
 		req, err = http.NewRequest(http.MethodPut, kafkaConnectResumeURL, bytes.NewBuffer(jsonValue))
 		if err != nil {
 			panic(err)
