@@ -30,23 +30,23 @@ type kafkaConnectStatus struct {
 }
 
 var kafkaConnectCheckTestReply = `{
-  "name": "cbs-dev-app-os2200",
+  "name": "connector",
   "connector": {
     "state": "RUNNING",
-    "worker_id": "10.116.15.12:8083"
+    "worker_id": "127.0.0.1:8083"
   },
   "tasks": [
   {
       "state": "FAILED",
       "trace": "org.apache.kafka.connect.errors.ConnectException: java.sql.SQLException: 0308 Unable to receive the JDBC Server's response (EOF detected after 0 header bytes received); connection to the server probably lost.\n\tat gr.unisystems.connect.jdbc.util.CachedConnectionProvider.getValidConnection(CachedConnectionProvider.java:102)\n\tat gr.unisystems.connect.jdbc.source.JdbcSourceTask.poll(JdbcSourceTask.java:225)\n\tat org.apache.kafka.connect.runtime.WorkerSourceTask.poll(WorkerSourceTask.java:244)\n\tat org.apache.kafka.connect.runtime.WorkerSourceTask.execute(WorkerSourceTask.java:220)\n\tat org.apache.kafka.connect.runtime.WorkerTask.doRun(WorkerTask.java:175)\n\tat org.apache.kafka.connect.runtime.WorkerTask.run(WorkerTask.java:219)\n\tat java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511)\n\tat java.util.concurrent.FutureTask.run(FutureTask.java:266)\n\tat java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)\n\tat java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)\n\tat java.lang.Thread.run(Thread.java:748)\nCaused by: java.sql.SQLException: 0308 Unable to receive the JDBC Server's response (EOF detected after 0 header bytes received); connection to the server probably lost.\n\tat com.unisys.os2200.rdms.jdbc.RdmsConnection.genException(RdmsConnection.java:4409)\n\tat com.unisys.os2200.rdms.jdbc.RdmsConnection.genException(RdmsConnection.java:4241)\n\tat com.unisys.os2200.rdms.jdbc.RdmsConnection.sendAndReceive(RdmsConnection.java:6568)\n\tat com.unisys.os2200.rdms.jdbc.RdmsStatement.execute(RdmsStatement.java:3963)\n\tat com.unisys.os2200.rdms.jdbc.RdmsWrapper_ST.execute(RdmsWrapper_ST.java:410)\n\tat gr.unisystems.connect.jdbc.util.CachedConnectionProvider.isConnectionValid(CachedConnectionProvider.java:116)\n\tat gr.unisystems.connect.jdbc.util.CachedConnectionProvider.getValidConnection(CachedConnectionProvider.java:96)\n\t... 10 more\n",
       "id": 0,
-      "worker_id": "10.116.15.12:8083"
+      "worker_id": "127.0.0.1:8083"
   },
   {
       "state": "FAILED",
       "trace": "org.apache.kafka.connect.errors.ConnectException: java.sql.SQLException: 0415 An RDMS Thread could not be successfully established before the STMT_EXECUTE_TASK(18) was attempted.\n\tat gr.unisystems.connect.jdbc.util.CachedConnectionProvider.getValidConnection(CachedConnectionProvider.java:102)\n\tat gr.unisystems.connect.jdbc.source.JdbcSourceTask.poll(JdbcSourceTask.java:225)\n\tat org.apache.kafka.connect.runtime.WorkerSourceTask.poll(WorkerSourceTask.java:244)\n\tat org.apache.kafka.connect.runtime.WorkerSourceTask.execute(WorkerSourceTask.java:220)\n\tat org.apache.kafka.connect.runtime.WorkerTask.doRun(WorkerTask.java:175)\n\tat org.apache.kafka.connect.runtime.WorkerTask.run(WorkerTask.java:219)\n\tat java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511)\n\tat java.util.concurrent.FutureTask.run(FutureTask.java:266)\n\tat java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)\n\tat java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)\n\tat java.lang.Thread.run(Thread.java:748)\nCaused by: java.sql.SQLException: 0415 An RDMS Thread could not be successfully established before the STMT_EXECUTE_TASK(18) was attempted.\n\tat com.unisys.os2200.rdms.jdbc.RdmsConnection.genException(RdmsConnection.java:4409)\n\tat com.unisys.os2200.rdms.jdbc.RdmsConnection.genException(RdmsConnection.java:4241)\n\tat com.unisys.os2200.rdms.jdbc.RdmsConnection.sendAndReceive(RdmsConnection.java:5922)\n\tat com.unisys.os2200.rdms.jdbc.RdmsStatement.execute(RdmsStatement.java:3963)\n\tat com.unisys.os2200.rdms.jdbc.RdmsWrapper_ST.execute(RdmsWrapper_ST.java:410)\n\tat gr.unisystems.connect.jdbc.util.CachedConnectionProvider.isConnectionValid(CachedConnectionProvider.java:116)\n\tat gr.unisystems.connect.jdbc.util.CachedConnectionProvider.getValidConnection(CachedConnectionProvider.java:96)\n\t... 10 more\n",
       "id": 1,
-      "worker_id": "10.116.15.12:8083"
+      "worker_id": "127.0.0.1:8083"
   }
   ],
   "type": "source"
