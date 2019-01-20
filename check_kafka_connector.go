@@ -6,19 +6,21 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
 type kafkaTask struct {
-	State     string
-	Trace     string
-	ID        int
-	Worker_id string
+	State    string
+	Trace    string
+	ID       int
+	WorkerID string `json:"Worker_id"`
 }
 type kafkaConnector struct {
-	State     string
-	Worker_id string
+	State    string
+	WorkerID string `json:"Worker_id"`
 }
 type kafkaConnectStatus struct {
 	Name      string
@@ -49,6 +51,17 @@ var kafkaConnectCheckTestReply = `{
   ],
   "type": "source"
 }`
+
+func logline(logentry string) {
+	f, err := os.OpenFile("check_kafka_connector.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("error opening file: %v", err)
+	}
+	defer f.Close()
+
+	log.SetOutput(f)
+	log.Println(logentry)
+}
 
 func main() {
 
@@ -97,7 +110,7 @@ func main() {
 		//Check for failed tasks
 		for i := range status.Tasks {
 			if status.Tasks[i].State == "FAILED" {
-				fmt.Printf("Id:%d, State: %s, WorkerID: %s\n", status.Tasks[i].ID, status.Tasks[i].State, status.Tasks[i].Worker_id)
+				fmt.Printf("Id:%d, State: %s, WorkerID: %s\n", status.Tasks[i].ID, status.Tasks[i].State, status.Tasks[i].WorkerID)
 
 				// Restart failed tasks
 				kafkaConnectRestartTaskURL := fmt.Sprintf("http://%s/connectors/%s/tasks/%d/restart", kafkaConnectServer, kafkaConnectorName, status.Tasks[i].ID)
@@ -117,6 +130,7 @@ func main() {
 				} else {
 					data, _ := ioutil.ReadAll(response.Body)
 					fmt.Println(string(data))
+					logline(fmt.Sprintf("Restarting Kafka Task with Id:%d on WorkerID: %s", status.Tasks[i].ID, status.Tasks[i].WorkerID))
 				}
 			} // if status.Tasks[i].State == "FAILED"
 		} // for i := range status.Tasks
