@@ -66,16 +66,16 @@ func logline(logentry string) {
 func main() {
 
 	fmt.Println("Starting the application...")
-	fmt.Println("Usage: go run check_kafka_connector.go -s=localhost:8083 -c=cbs-dev-app-os2200 -t=false")
+	fmt.Println("Usage: go run check_kafka_connector.go -s=localhost:8083 -c=connector -t=false")
 	fmt.Println("-s = Kafka Connect Server IP:Port(localhost:8083)")
-	fmt.Println("-c = Kafka Connector Name(cbs-dev-app-os2200)")
+	fmt.Println("-c = Kafka Connector Name(connector)")
 	fmt.Println("-t = Kafka Connector Check Test for debbuging ONLY(false)")
 	//Get commandline flags
 	var kafkaConnectServer string
 	var kafkaConnectorName string
 	var kafkaConnectorCheckTest bool
 	flag.StringVar(&kafkaConnectServer, "s", "localhost:8083", "kafkaConnectServer")
-	flag.StringVar(&kafkaConnectorName, "c", "cbs-dev-app-os2200", "kafkaConnectorName")
+	flag.StringVar(&kafkaConnectorName, "c", "connector", "kafkaConnectorName")
 	flag.BoolVar(&kafkaConnectorCheckTest, "t", false, "kafkaConnectorCheckTest")
 	flag.Parse()
 	fmt.Println("kafkaConnectServer has value ", kafkaConnectServer)
@@ -116,7 +116,6 @@ func main() {
 				kafkaConnectRestartTaskURL := fmt.Sprintf("http://%s/connectors/%s/tasks/%d/restart", kafkaConnectServer, kafkaConnectorName, status.Tasks[i].ID)
 				if kafkaConnectorCheckTest == true {
 					kafkaConnectRestartTaskURL = "https://httpbin.org/post"
-					//kafkaConnectRestartTaskURL = fmt.Sprintf("%s", "http://localhost:9200/kibana_sample_data_logs/_close")
 				}
 				fmt.Printf("Restarting Kafka Task...%s\n", kafkaConnectRestartTaskURL)
 				jsonData := ""
