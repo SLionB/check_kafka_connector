@@ -129,7 +129,7 @@ func main() {
 				} else {
 					data, _ := ioutil.ReadAll(response.Body)
 					fmt.Println(string(data))
-					logline(fmt.Sprintf("Restarting Kafka Task with Id:%d on WorkerID: %s", status.Tasks[i].ID, status.Tasks[i].WorkerID))
+					logline(fmt.Sprintf("Restarting Kafka Task with Id:%d on WorkerID: %s for Connector: %s", status.Tasks[i].ID, status.Tasks[i].WorkerID, status.Name))
 				}
 			} // if status.Tasks[i].State == "FAILED"
 		} // for i := range status.Tasks
